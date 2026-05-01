@@ -1,5 +1,36 @@
 import streamlit as st
 from datetime import datetime
+def registrar_suceso(id_evento, dorsal, nro_vuelta, estado="ACT"):
+    """
+    Inserta el registro en vueltas_vivo. 
+    El 'estado' puede ser ACT (por defecto), WINNER, o DNF (RTC/INC/OVR/DQ).
+    """
+    # Capturamos el momento exacto
+    ahora = datetime.now().isoformat()
+    
+    nuevo_registro = {
+        "id_evento": id_evento,
+        "dorsal": dorsal,
+        "nro_vuelta": nro_vuelta,
+        "hora_llegada": ahora,
+        "estado": estado
+    }
+    
+    # Encastre con Supabase
+    try:
+        response = supabase.table("vueltas_vivo").insert(nuevo_registro).execute()
+        return f"Registro exitoso: {dorsal} - {estado}"
+    except Exception as e:
+        return f"Error en el registro: {e}"
+
+def obtener_activos(id_evento, nro_vuelta):
+    # Traemos a todos los inscriptos
+    inscriptos = supabase.table("inscripciones").select("dorsal").eq("id_evento", id_evento).execute()
+    # Traemos a los que ya marcaron este patio o ya están fuera (DNF)
+    ya_registrados = supabase.table("vueltas_vivo").select("dorsal").eq("id_evento", id_evento).eq("nro_vuelta", nro_vuelta).execute()
+    
+    # La diferencia nos da los que están todavía en el circuito
+    #
 
 # Simulación de la configuración previa
 ID_EVENTO = "Yaguarundi-2026"
