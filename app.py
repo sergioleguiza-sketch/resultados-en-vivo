@@ -67,9 +67,35 @@ with col_btn:
         st.success(f"Arribo procesado: {entrada}")
 
 # --- SECCIÓN D: NOVEDADES MANUALES (Botones Rápidos) ---
+# --- Lógica de Selección (Para el Director) ---
+# Traemos los corredores inscriptos para el selectbox
+inscriptos_data = supabase.table("inscripciones").select("dorsal, nombre, apellido").eq("id_evento", ID_EVENTO).execute()
+lista_corredores = [f"{c['dorsal']} - {c['nombre']} {c['apellido']}" for c in inscriptos_data.data]
+
 st.subheader("📝 Registro de Novedades (Manual)")
+corredor_selec = st.selectbox("Seleccionar Corredor:", lista_corredores)
+dorsal_id = int(corredor_selec.split(" - ")[0])
+
+# --- Enganche de los Botones ---
 c1, c2, c3, c4 = st.columns(4)
-with c1: st.button("❌ Marcar RTC", use_container_width=True)
-with c2: st.button("⚠️ Marcar INC", use_container_width=True)
-with c3: st.button("🚫 Marcar DQ", use_container_width=True)
-with c4: st.button("⏳ Marcar OVR", use_container_width=True)
+
+with c1:
+    if st.button("❌ Marcar RTC", use_container_width=True):
+        res = registrar_suceso(ID_EVENTO, dorsal_id, VUELTA_ACTUAL, "DNF (RTC)")
+        st.toast(res)
+
+with c2:
+    if st.button("⚠️ Marcar INC", use_container_width=True):
+        res = registrar_suceso(ID_EVENTO, dorsal_id, VUELTA_ACTUAL, "DNF (INC)")
+        st.toast(res)
+
+with c3:
+    if st.button("🚫 Marcar DQ", use_container_width=True):
+        res = registrar_suceso(ID_EVENTO, dorsal_id, VUELTA_ACTUAL, "DNF (DQ)")
+        st.toast(res)
+
+with c4:
+    if st.button("🏆 WINNER", use_container_width=True, type="primary"):
+        res = registrar_suceso(ID_EVENTO, dorsal_id, VUELTA_ACTUAL, "WINNER")
+        st.balloons() # ¡Festejo para el ganador!
+        st.success(res)
