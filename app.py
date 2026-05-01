@@ -32,6 +32,27 @@ def obtener_activos(id_evento, nro_vuelta):
     # La diferencia nos da los que están todavía en el circuito
     #
 
+def obtener_ranking_vivo(id_evento):
+    # Traemos el resumen de la tabla 'vueltas_vivo'
+    # Agrupamos por dorsal para tener los totales
+    resumen = supabase.table("vueltas_vivo") \
+        .select("dorsal, nro_vuelta, estado") \
+        .eq("id_evento", id_evento) \
+        .execute()
+    
+    # Procesamos con Pandas para el ranking
+    df = pd.DataFrame(resumen.data)
+    ranking = df.groupby("dorsal").agg(
+        Vueltas=("nro_vuelta", "max"),
+        Ultimo_Estado=("estado", "last")
+    ).reset_index()
+
+    # Calculamos KM y ordenamos: 1° por Vueltas, 2° por Estado (Activos arriba)
+    ranking["KM"] = ranking["Vueltas"] * 6.706
+    ranking = ranking.sort_values(by=["Vueltas"], ascending=False)
+    
+    return ranking
+
 # Simulación de la configuración previa
 ID_EVENTO = "Yaguarundi-2026"
 HORA_LARGADA = datetime(2026, 9, 12, 8, 0, 0)
