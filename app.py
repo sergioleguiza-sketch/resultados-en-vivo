@@ -1,122 +1,90 @@
 import streamlit as st
-from datetime import datetime
-def registrar_suceso(id_evento, dorsal, nro_vuelta, estado="ACT"):
+import pandas as pd
+from supabase import create_client
+from st_autorefresh import st_autorefresh
+
+# 1. Configuración de página (Ancho completo para el Grid)
+st.set_page_config(layout="wide", page_title="Backyard Ultra AR - Resultados en Vivo")
+
+# 2. Conexión a la "Fuente de la Verdad" (Tus credenciales de Supabase)
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+supabase = create_client(url, key)
+
+# 3. Autorefresh cada 30 segundos (Mantiene el "Vivo" sin intervención del usuario)
+st_autorefresh(interval=30 * 1000, key="datarefresh")
+
+# --- CABECERA ESTILO BELGA ---
+st.title("🏆 Resultados en Vivo: Yaguarundí- 2026")
+st.markdown("---")
+
+def cargar_ranking():
+    # Consulta encapsulada: Traemos datos de Vueltas + Inscripciones + Atletas
+    # Nota: Usamos la relación que definimos en el esquema SQL
+    query = """
+        dorsal, 
+        nro_vuelta, 
+        estado, 
+        inscripciones (
+            asistente,
+            atletas (nombre, apellido, localidad, nacionalidad)
+        )
     """
-    Inserta el registro en vueltas_vivo. 
-    El 'estado' puede ser ACT (por defecto), WINNER, o DNF (RTC/INC/OVR/DQ).
-    """
-    # Capturamos el momento exacto
-    ahora = datetime.now().isoformat()
-    
-    nuevo_registro = {
-        "id_evento": id_evento,
-        "dorsal": dorsal,
-        "nro_vuelta": nro_vuelta,
-        "hora_llegada": ahora,
-        "estado": estado
-    }
-    
-    # Encastre con Supabase
-    try:
-        response = supabase.table("vueltas_vivo").insert(nuevo_registro).execute()
-        return f"Registro exitoso: {dorsal} - {estado}"
-    except Exception as e:
-        return f"Error en el registro: {e}"
+    response = supabase.table("vueltas_vivo").select(query).execute()
+    return response.data
 
-def obtener_activos(id_evento, nro_vuelta):
-    # Traemos a todos los inscriptos
-    inscriptos = supabase.table("inscripciones").select("dorsal").eq("id_evento", id_evento).execute()
-    # Traemos a los que ya marcaron este patio o ya están fuera (DNF)
-    ya_registrados = supabase.table("vueltas_vivo").select("dorsal").eq("id_evento", id_evento).eq("nro_vuelta", nro_vuelta).execute()
-    
-    # La diferencia nos da los que están todavía en el circuito
-    #
+def procesar_ranking(datos):
+    if not datos:
+        return pd.DataFrame()
 
-def obtener_ranking_vivo(id_evento):
-    # Traemos el resumen de la tabla 'vueltas_vivo'
-    # Agrupamos por dorsal para tener los totales
-    resumen = supabase.table("vueltas_vivo") \
-        .select("dorsal, nro_vuelta, estado") \
-        .eq("id_evento", id_evento) \
-        .execute()
+    # Aplanamos el JSON de Supabase para convertirlo en tabla
+    filas = []
+    for reg in datos:
+        atleta = reg['inscripciones']['atletas']
+        filas.append({
+            "Bib": reg['dorsal'],
+            "Name": f"{atleta['nombre']} {atleta['apellido']}",
+            "Localidad": atleta['localidad'],
+            "Country": atleta['nacionalidad'],
+            "Laps": reg['nro_vuelta'],
+            "KM": round(reg['nro_vuelta'] * 6.706, 2),
+            "Estado": reg['estado']
+        })
     
-    # Procesamos con Pandas para el ranking
-    df = pd.DataFrame(resumen.data)
-    ranking = df.groupby("dorsal").agg(
-        Vueltas=("nro_vuelta", "max"),
-        Ultimo_Estado=("estado", "last")
-    ).reset_index()
-
-    # Calculamos KM y ordenamos: 1° por Vueltas, 2° por Estado (Activos arriba)
-    ranking["KM"] = ranking["Vueltas"] * 6.706
-    ranking = ranking.sort_values(by=["Vueltas"], ascending=False)
+    df = pd.DataFrame(filas)
     
+    # Lógica de Ranking: 1ro por Laps (desc), 2do por Estado (ACT arriba)
+    # Agrupamos por Bib para quedarnos con la última vuelta registrada de cada uno
+    ranking = df.sort_values(['Laps', 'Bib'], ascending=[False, True]).drop_duplicates('Bib')
     return ranking
 
-# Simulación de la configuración previa
-ID_EVENTO = "Yaguarundi-2026"
-HORA_LARGADA = datetime(2026, 9, 12, 8, 0, 0)
-VUELTA_ACTUAL = 1
+# --- RENDERIZADO DEL GRID ---
+datos_frescos = cargar_ranking()
+ranking_df = procesar_ranking(datos_frescos)
 
-st.title(f"🏆 Control en Vivo: {ID_EVENTO}")
+if not ranking_df.empty:
+    # Aplicamos estilos de color (Dorado para Winner, Gris para DNF)
+    def style_rows(row):
+        if row.Estado == "WINNER":
+            return ['background-color: #f1c40f; color: black; font-weight: bold'] * len(row)
+        if "DNF" in row.Estado:
+            return ['color: #95a5a6'] * len(row)
+        return [''] * len(row)
 
-# --- SECCIÓN A: RELOJ Y ESTADO GLOBAL ---
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Vuelta Actual", VUELTA_ACTUAL)
-with col2:
-    # Aquí iría un contador regresivo real
-    st.metric("Tiempo Restante", "00:45:12", delta="-3 min", delta_color="inverse")
-with col3:
-    st.metric("En Circuito", "48 / 50", help="Corredores que aún no marcaron llegada")
+    # El Grid de Resultados
+    st.dataframe(
+        ranking_df.style.apply(style_rows, axis=1),
+        column_config={
+            "Country": st.column_config.TextColumn("País"), # Aquí podrías usar banderas emoji
+            "KM": st.column_config.NumberColumn(format="%.2f km"),
+            "Laps": st.column_config.NumberColumn("Vueltas"),
+        },
+        hide_index=True,
+        use_container_width=True
+    )
+else:
+    st.info("Esperando el inicio de la Vuelta 1 para mostrar resultados...")
 
-# --- SECCIÓN B: MONITOR DE SEGURIDAD (Alertas) ---
-st.subheader("🚨 Monitor de Seguridad")
-# Esta lista se filtra automáticamente: inscriptos menos arribos
-faltantes = ["Dorsal 10 - Juan Perez", "Dorsal 23 - Sergio L.", "Dorsal 44 - Ana F."]
-for corredor in faltantes:
-    st.warning(f"Falta Arribo: {corredor} | Asistente: Andrea Kapp")
-
-# --- SECCIÓN C: INGRESO DE DATOS (El 'Lego' de Entrada) ---
-st.divider()
-col_in, col_btn = st.columns([3, 1])
-with col_in:
-    # El scanner de barras o tag 'tipea' aquí y manda Enter
-    entrada = st.text_input("LECTURA DE HARDWARE (Dorsal/Tag):", placeholder="Scan aquí...")
-with col_btn:
-    if st.button("Registrar Arribo"):
-        st.success(f"Arribo procesado: {entrada}")
-
-# --- SECCIÓN D: NOVEDADES MANUALES (Botones Rápidos) ---
-# --- Lógica de Selección (Para el Director) ---
-# Traemos los corredores inscriptos para el selectbox
-inscriptos_data = supabase.table("inscripciones").select("dorsal, nombre, apellido").eq("id_evento", ID_EVENTO).execute()
-lista_corredores = [f"{c['dorsal']} - {c['nombre']} {c['apellido']}" for c in inscriptos_data.data]
-
-st.subheader("📝 Registro de Novedades (Manual)")
-corredor_selec = st.selectbox("Seleccionar Corredor:", lista_corredores)
-dorsal_id = int(corredor_selec.split(" - ")[0])
-
-# --- Enganche de los Botones ---
-c1, c2, c3, c4 = st.columns(4)
-
-with c1:
-    if st.button("❌ Marcar RTC", use_container_width=True):
-        res = registrar_suceso(ID_EVENTO, dorsal_id, VUELTA_ACTUAL, "DNF (RTC)")
-        st.toast(res)
-
-with c2:
-    if st.button("⚠️ Marcar INC", use_container_width=True):
-        res = registrar_suceso(ID_EVENTO, dorsal_id, VUELTA_ACTUAL, "DNF (INC)")
-        st.toast(res)
-
-with c3:
-    if st.button("🚫 Marcar DQ", use_container_width=True):
-        res = registrar_suceso(ID_EVENTO, dorsal_id, VUELTA_ACTUAL, "DNF (DQ)")
-        st.toast(res)
-
-with c4:
-    if st.button("🏆 WINNER", use_container_width=True, type="primary"):
-        res = registrar_suceso(ID_EVENTO, dorsal_id, VUELTA_ACTUAL, "WINNER")
-        st.balloons() # ¡Festejo para el ganador!
-        st.success(res)
+# Pie de página con tu impronta
+st.markdown("---")
+st.caption("Sistema de Cronometraje desarrollado por Cronoer.com.ar - Empatía con el atleta.")
