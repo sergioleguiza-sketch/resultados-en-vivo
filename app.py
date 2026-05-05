@@ -18,9 +18,21 @@ st_autorefresh(interval=30 * 1000, key="datarefresh")
 st.title("🏆 Resultados en Vivo: Yaguarundí- 2026")
 st.markdown("---")
 
-# --- HEADER DE CLIMA ---
-# Esto se alimenta de la nueva tabla 'eventos'
-st.write(f"### 🌡️ {evento['temperatura']}°C | 💧 {evento['humedad']}% | {evento['clima_desc']}")
+# 1. Definir la función para traer el evento
+def obtener_evento_activo():
+    res = supabase.table("eventos").select("*").eq("estado", "en_vivo").maybe_single().execute()
+    return res.data
+
+# 2. Ejecutar la función para tener los datos del clima
+evento = obtener_evento_activo()
+
+# 3. RECIÉN ACÁ usar la variable 'evento' para el header
+if evento:
+    st.write(f"### 🌡️ {evento['temperatura']}°C | 💧 {evento['humedad']}% | {evento['clima_desc']}")
+    id_evento_actual = evento['id_evento']
+else:
+    st.warning("No hay eventos activos en este momento.")
+    st.stop() # Frena la ejecución si no hay evento
 
 # --- EL GRID DE RESULTADOS ---
 ranking_final = obtener_datos_publicos(id_evento_actual)
