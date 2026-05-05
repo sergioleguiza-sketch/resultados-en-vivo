@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from supabase import create_client
-from st_autorefresh import st-autorefresh
+from st_autorefresh import st_autorefresh
 
 # 1. Configuración de página (Ancho completo para el Grid)
 st.set_page_config(layout="wide", page_title="Backyard Ultra AR - Resultados en Vivo")
