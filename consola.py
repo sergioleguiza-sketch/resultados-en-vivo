@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime
+
 def registrar_suceso(id_evento, dorsal, nro_vuelta, estado="ACT"):
     """
     Inserta el registro en vueltas_vivo. 
@@ -30,7 +31,6 @@ def obtener_activos(id_evento, nro_vuelta):
     ya_registrados = supabase.table("vueltas_vivo").select("dorsal").eq("id_evento", id_evento).eq("nro_vuelta", nro_vuelta).execute()
     
     # La diferencia nos da los que están todavía en el circuito
-    #
 
 def obtener_ranking_vivo(id_evento):
     # Traemos el resumen de la tabla 'vueltas_vivo'
