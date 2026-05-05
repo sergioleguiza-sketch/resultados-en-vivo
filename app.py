@@ -18,6 +18,59 @@ st_autorefresh(interval=30 * 1000, key="datarefresh")
 st.title("🏆 Resultados en Vivo: Yaguarundí- 2026")
 st.markdown("---")
 
+# --- HEADER DE CLIMA ---
+# Esto se alimenta de la nueva tabla 'eventos'
+st.write(f"### 🌡️ {evento['temperatura']}°C | 💧 {evento['humedad']}% | {evento['clima_desc']}")
+
+# --- EL GRID DE RESULTADOS ---
+ranking_final = obtener_datos_publicos(id_evento_actual)
+
+def colorear_ranking(row):
+    if row.estado == "ACT":
+        return ['background-color: rgba(46, 204, 113, 0.1)'] * len(row) # Verde muy tenue
+    if row.estado == "WINNER":
+        return ['background-color: #f1c40f; color: black; font-weight: bold'] * len(row)
+    return ['color: #95a5a6; opacity: 0.7'] * len(row) # Gris para DNF
+
+st.dataframe(
+    ranking_final.style.apply(colorear_ranking, axis=1),
+    column_config={
+        "nro_vuelta": "Vueltas",
+        "hora_llegada": st.column_config.DatetimeColumn("Último Arribo", format="HH:mm:ss"),
+        "estado": "Situación"
+    },
+    hide_index=True,
+    use_container_width=True
+)
+def obtener_datos_publicos(id_evento):
+    # Traemos las vueltas, inscripciones y el país (clave para la Bitácora)
+    query = """
+        dorsal, nro_vuelta, hora_llegada, estado,
+        inscripciones(atletas(nombre, apellido, nacionalidad))
+    """
+    res = supabase.table("vueltas_vivo").select(query).eq("id_evento", id_evento).execute()
+    df = pd.DataFrame(res.data)
+
+    if df.empty:
+        return df
+
+    # Nos quedamos con el último registro de cada dorsal (el estado más actual)
+    # Ordenamos por hora de llegada para asegurar que el 'last' sea el más reciente
+    df_actual = df.sort_values('hora_llegada').groupby('dorsal').last().reset_index()
+
+    # --- SEPARACIÓN DE BLOQUES ---
+    activos = df_actual[df_actual['estado'] == 'ACT'].copy()
+    no_activos = df_actual[df_actual['estado'] != 'ACT'].copy()
+
+    # 1. ORDEN ACTIVOS: Por hora de llegada (el que llegó recién, arriba)
+    activos = activos.sort_values(by='hora_llegada', ascending=False)
+
+    # 2. ORDEN DNF: Por vueltas completadas (desc) y luego por tiempo (asc)
+    no_activos = no_activos.sort_values(by=['nro_vuelta', 'hora_llegada'], ascending=[False, True])
+
+    # Unimos ambos bloques: Activos primero, DNF después
+    return pd.concat([activos, no_activos])
+
 def cargar_ranking():
     # Consulta encapsulada: Traemos datos de Vueltas + Inscripciones + Atletas
     # Nota: Usamos la relación que definimos en el esquema SQL
