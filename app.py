@@ -11,17 +11,46 @@ url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
 supabase = create_client(url, key)
 
-# 3. Autorefresh cada 30 segundos (Mantiene el "Vivo" sin intervención del usuario)
-st_autorefresh(interval=30 * 1000, key="datarefresh")
-
 # --- CABECERA ESTILO BELGA ---
 st.title("🏆 Resultados en Vivo: Yaguarundí- 2026")
 st.markdown("---")
 
-# 1. Definir la función para traer el evento
+# 2. DEFINICIÓN DE FUNCIONES (El "Cómo" hacemos las cosas)
 def obtener_evento_activo():
     res = supabase.table("eventos").select("*").eq("estado", "en_vivo").maybe_single().execute()
     return res.data
+    
+def obtener_datos_publicos(id_evento):
+    # Traemos las vueltas, inscripciones y el país (clave para la Bitácora)
+    query = """
+        dorsal, nro_vuelta, hora_llegada, estado,
+        inscripciones(atletas(nombre, apellido, nacionalidad))
+    """
+    res = supabase.table("vueltas_vivo").select(query).eq("id_evento", id_evento).execute()
+    df = pd.DataFrame(res.data)
+
+    if df.empty:
+        return df
+
+    # Nos quedamos con el último registro de cada dorsal (el estado más actual)
+    # Ordenamos por hora de llegada para asegurar que el 'last' sea el más reciente
+    df_actual = df.sort_values('hora_llegada').groupby('dorsal').last().reset_index()
+
+    # --- SEPARACIÓN DE BLOQUES ---
+    activos = df_actual[df_actual['estado'] == 'ACT'].copy()
+    no_activos = df_actual[df_actual['estado'] != 'ACT'].copy()
+
+    # 1. ORDEN ACTIVOS: Por hora de llegada (el que llegó recién, arriba)
+    activos = activos.sort_values(by='hora_llegada', ascending=False)
+
+    # 2. ORDEN DNF: Por vueltas completadas (desc) y luego por tiempo (asc)
+    no_activos = no_activos.sort_values(by=['nro_vuelta', 'hora_llegada'], ascending=[False, True])
+
+    # Unimos ambos bloques: Activos primero, DNF después
+    return pd.concat([activos, no_activos])
+
+# 3. Autorefresh cada 30 segundos (Mantiene el "Vivo" sin intervención del usuario)
+st_autorefresh(interval=30 * 1000, key="datarefresh")
 
 # 2. Ejecutar la función para tener los datos del clima
 evento = obtener_evento_activo()
@@ -54,34 +83,6 @@ st.dataframe(
     hide_index=True,
     use_container_width=True
 )
-def obtener_datos_publicos(id_evento):
-    # Traemos las vueltas, inscripciones y el país (clave para la Bitácora)
-    query = """
-        dorsal, nro_vuelta, hora_llegada, estado,
-        inscripciones(atletas(nombre, apellido, nacionalidad))
-    """
-    res = supabase.table("vueltas_vivo").select(query).eq("id_evento", id_evento).execute()
-    df = pd.DataFrame(res.data)
-
-    if df.empty:
-        return df
-
-    # Nos quedamos con el último registro de cada dorsal (el estado más actual)
-    # Ordenamos por hora de llegada para asegurar que el 'last' sea el más reciente
-    df_actual = df.sort_values('hora_llegada').groupby('dorsal').last().reset_index()
-
-    # --- SEPARACIÓN DE BLOQUES ---
-    activos = df_actual[df_actual['estado'] == 'ACT'].copy()
-    no_activos = df_actual[df_actual['estado'] != 'ACT'].copy()
-
-    # 1. ORDEN ACTIVOS: Por hora de llegada (el que llegó recién, arriba)
-    activos = activos.sort_values(by='hora_llegada', ascending=False)
-
-    # 2. ORDEN DNF: Por vueltas completadas (desc) y luego por tiempo (asc)
-    no_activos = no_activos.sort_values(by=['nro_vuelta', 'hora_llegada'], ascending=[False, True])
-
-    # Unimos ambos bloques: Activos primero, DNF después
-    return pd.concat([activos, no_activos])
 
 def cargar_ranking():
     # Consulta encapsulada: Traemos datos de Vueltas + Inscripciones + Atletas
