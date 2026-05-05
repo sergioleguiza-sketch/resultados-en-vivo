@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime, timezone, timedelta
 from supabase import create_client
-from st_autorefresh import st_autorefresh
+#from st_autorefresh import st_autorefresh
 
 # 1. Configuración y Conexión
 st.set_page_config(layout="wide", page_title="Cronoer - Resultados en Vivo")
@@ -11,7 +12,7 @@ key = st.secrets["SUPABASE_KEY"]
 supabase = create_client(url, key)
 
 # Autorefresh cada 30 segundos
-st_autorefresh(interval=30 * 1000, key="datarefresh")
+#st_autorefresh(interval=30 * 1000, key="datarefresh")
 
 # 2. Funciones Lógicas
 def obtener_evento_activo():
@@ -56,6 +57,10 @@ if evento:
     if not ranking.empty:
         # Columna de KM calculada en el momento
         ranking['KM'] = (ranking['nro_vuelta'] * 6.706).round(2)
+
+        # 2. AQUÍ VA EL CÓDIGO DE FORMATO DE HORA
+        # Esto transforma "2026-05-05T22:51:00Z" en "22:51:00"
+        ranking['hora_llegada'] = pd.to_datetime(ranking['hora_llegada']).dt.strftime('%H:%M:%S')
         
         # Aplicamos el estilo de colores
         def color_filas(row):
