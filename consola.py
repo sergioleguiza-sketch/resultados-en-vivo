@@ -1,5 +1,12 @@
 import streamlit as st
-from datetime import datetime
+import pandas as pd
+from datetime import datetime, timezone
+from supabase import create_client
+
+# Sin esto, la consola no sabe a dónde mandar los datos
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+supabase = create_client(url, key)
 
 def registrar_suceso(id_evento, dorsal, nro_vuelta, estado="ACT"):
     """
@@ -7,7 +14,7 @@ def registrar_suceso(id_evento, dorsal, nro_vuelta, estado="ACT"):
     El 'estado' puede ser ACT (por defecto), WINNER, o DNF (RTC/INC/OVR/DQ).
     """
     # Capturamos el momento exacto
-    ahora = datetime.now().isoformat()
+    ahora = datetime.now(timezone.utc).isoformat()
     
     nuevo_registro = {
         "id_evento": id_evento,
@@ -24,13 +31,22 @@ def registrar_suceso(id_evento, dorsal, nro_vuelta, estado="ACT"):
     except Exception as e:
         return f"Error en el registro: {e}"
 
-def obtener_activos(id_evento, nro_vuelta):
-    # Traemos a todos los inscriptos
-    inscriptos = supabase.table("inscripciones").select("dorsal").eq("id_evento", id_evento).execute()
-    # Traemos a los que ya marcaron este patio o ya están fuera (DNF)
-    ya_registrados = supabase.table("vueltas_vivo").select("dorsal").eq("id_evento", id_evento).eq("nro_vuelta", nro_vuelta).execute()
+def obtener_faltantes_en_patio(id_evento, nro_vuelta):
+    # 1. Traemos todos los que iniciaron la vuelta (o todos los inscriptos)
+    todos = supabase.table("inscripciones").select("dorsal").eq("id_evento", id_evento).execute()
+    dorsales_todos = {c['dorsal'] for c in todos.data}
     
-    # La diferencia nos da los que están todavía en el circuito
+    # 2. Traemos los que ya llegaron al patio en ESTA vuelta
+    llegaron = supabase.table("vueltas_vivo").select("dorsal").eq("id_evento", id_evento).eq("nro_vuelta", nro_vuelta).execute()
+    dorsales_llegaron = {c['dorsal'] for c in llegaron.data}
+    
+    # 3. Traemos los que ya son DNF (para no buscarlos al cohete)
+    fuera = supabase.table("vueltas_vivo").select("dorsal").eq("id_evento", id_evento).neq("estado", "ACT").execute()
+    dorsales_fuera = {c['dorsal'] for c in fuera.data}
+    
+    # Faltantes = Todos - (Llegaron + Ya fuera de carrera)
+    faltantes = dorsales_todos - (dorsales_llegaron | dorsales_fuera)
+    return list(faltantes)
 
 def obtener_ranking_vivo(id_evento):
     # Traemos el resumen de la tabla 'vueltas_vivo'
@@ -53,10 +69,16 @@ def obtener_ranking_vivo(id_evento):
     
     return ranking
 
-# Simulación de la configuración previa
-ID_EVENTO = "Yaguarundi-2026"
-HORA_LARGADA = datetime(2026, 9, 12, 8, 0, 0)
-VUELTA_ACTUAL = 1
+# Buscamos el evento que pusiste como "en_vivo" en la tabla maestra
+res_evento = supabase.table("eventos").select("*").eq("estado", "en_vivo").maybe_single().execute()
+
+if res_evento.data:
+    evento = res_evento.data
+    ID_EVENTO = evento['id_evento']
+    st.success(f"Conectado a: {evento['nombre']} | 🌡️ {evento['temperatura']}°C")
+else:
+    st.error("No hay evento activo en Supabase")
+    st.stop()
 
 st.title(f"🏆 Control en Vivo: {ID_EVENTO}")
 
