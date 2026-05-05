@@ -20,6 +20,23 @@ def obtener_evento_activo():
     res = supabase.table("eventos").select("*").eq("estado", "en_vivo").maybe_single().execute()
     return res.data
     
+# 3. Autorefresh cada 30 segundos (Mantiene el "Vivo" sin intervención del usuario)
+st_autorefresh(interval=30 * 1000, key="datarefresh")
+
+# 2. Ejecutar la función para tener los datos del clima
+evento_actual = obtener_evento_activo()
+
+if evento_actual:
+    # RECIÉN AQUÍ mostramos el clima porque la variable 'evento_actual' ya existe
+    st.title(f"🏆 {evento_actual['nombre']}")
+    st.write(f"### 🌡️ {evento_actual.get('temperatura', '--')}°C | 💧 {evento_actual.get('humedad', '--')}% | {evento_actual.get('clima_desc', 'Sin datos de clima')}")
+    st.markdown("---")
+    
+    # Aquí iría tu función de ranking usando evento_actual['id_evento']
+    st.info("Ranking en proceso de carga...") 
+else:
+    st.warning("No hay ningún evento configurado como 'en_vivo'.")
+
 def obtener_datos_publicos(id_evento):
     # Traemos las vueltas, inscripciones y el país (clave para la Bitácora)
     query = """
@@ -48,12 +65,6 @@ def obtener_datos_publicos(id_evento):
 
     # Unimos ambos bloques: Activos primero, DNF después
     return pd.concat([activos, no_activos])
-
-# 3. Autorefresh cada 30 segundos (Mantiene el "Vivo" sin intervención del usuario)
-st_autorefresh(interval=30 * 1000, key="datarefresh")
-
-# 2. Ejecutar la función para tener los datos del clima
-evento = obtener_evento_activo()
 
 # 3. RECIÉN ACÁ usar la variable 'evento' para el header
 if evento:
