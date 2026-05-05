@@ -17,7 +17,10 @@ supabase = create_client(url, key)
 # 2. Funciones Lógicas
 def obtener_evento_activo():
     res = supabase.table("eventos").select("*").eq("estado", "en_vivo").maybe_single().execute()
-    return res.data
+    # Verificamos si la respuesta existe antes de pedir el .data
+    if res:
+        return res.data
+    return None
 
 def obtener_ranking_espejo(id_evento):
     query = "dorsal, nro_vuelta, hora_llegada, estado, inscripciones(atletas(nombre, apellido, nacionalidad))"
