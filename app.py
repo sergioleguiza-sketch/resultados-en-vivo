@@ -15,12 +15,23 @@ supabase = create_client(url, key)
 #st_autorefresh(interval=30 * 1000, key="datarefresh")
 
 # 2. Funciones Lógicas
-def obtener_evento_activo():
-    res = supabase.table("eventos").select("*").eq("estado", "en_vivo").maybe_single().execute()
-    # Verificamos si la respuesta existe antes de pedir el .data
-    if res:
-        return res.data
-    return None
+# --- REEMPLAZO EN EL RENDERIZADO ---
+
+# 1. Traemos TODOS los eventos que estén "en_vivo" (pueden ser varios)
+res_eventos = supabase.table("eventos").select("*").eq("estado", "en_vivo").execute()
+eventos_lista = res_eventos.data
+
+if eventos_lista:
+    # 2. Si hay más de uno, mostramos el selector
+    if len(eventos_lista) > 1:
+        nombres_eventos = [e['nombre'] for e in eventos_lista]
+        seleccion = st.selectbox("📍 Seleccioná la carrera en curso:", nombres_eventos)
+        
+        # Filtramos para quedarnos con los datos del evento elegido
+        evento = next(e for e in eventos_lista if e['nombre'] == seleccion)
+    else:
+        # Si hay uno solo, lo asignamos directo
+        evento = eventos_lista[0]
 
 def obtener_ranking_espejo(id_evento):
     query = "dorsal, nro_vuelta, hora_llegada, estado, inscripciones(atletas(nombre, apellido, nacionalidad))"
@@ -46,7 +57,7 @@ def obtener_ranking_espejo(id_evento):
     return pd.concat([activos, finalizados])
 
 # 3. Renderizado de la Interfaz
-evento = obtener_evento_activo()
+#evento = obtener_evento_activo()
 
 if evento:
     # Header con Clima (Cronoer Style)
