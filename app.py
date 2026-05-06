@@ -32,9 +32,25 @@ if eventos_lista:
     else:
         # Si hay uno solo, lo asignamos directo
         evento = eventos_lista[0]
+        
+def calcular_tiempo_neto(fila, hora_cero_evento):
+    # 1. Calculamos cuándo empezó el patio que el atleta acaba de terminar
+    minutos_transcurridos = (fila['nro_vuelta'] - 1) * 60
+    inicio_patio = hora_cero_evento + timedelta(minutes=minutos_transcurridos)
+    
+    # 2. La hora de llegada viene de Supabase (asegurarse que sea datetime)
+    llegada = pd.to_datetime(fila['hora_llegada'])
+    
+    # 3. Restamos para obtener la duración
+    duracion = llegada - inicio_patio
+    
+    # Retornamos un string formateado MM:SS o HH:MM:SS
+    total_segundos = int(duracion.total_seconds())
+    minutos, segundos = divmod(total_segundos, 60)
+    return f"{minutos:02d}:{segundos:02d}"
 
 def obtener_ranking_espejo(id_evento):
-    query = "dorsal, nro_vuelta, hora_llegada, estado, inscripciones(atletas(nombre, apellido, nacionalidad))"
+    query = "dorsal, nro_, hora_llegada, estado, inscripciones(atletas(nombre, apellido, nacionalidad))"
     res = supabase.table("vueltas_vivo").select(query).eq("id_evento", id_evento).execute()
     
     if not res.data:
@@ -74,7 +90,7 @@ if evento:
 
         # 2. AQUÍ VA EL CÓDIGO DE FORMATO DE HORA
         # Esto transforma "2026-05-05T22:51:00Z" en "22:51:00"
-        ranking['hora_llegada'] = pd.to_datetime(ranking['hora_llegada']).dt.strftime('%H:%M:%S')
+        ranking['hora_llegada'] = ranking.apply(lambda x: calcular_tiempo_neto(x, hora_cero_local), axis=1)
         
         # Aplicamos el estilo de colores
         def color_filas(row):
