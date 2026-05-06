@@ -132,7 +132,7 @@ if evento:
         def color_filas(row):
             # Verde esmeralda suave (Cronoer Style)
             if row.estado == 'ACT': 
-                return ['background-color: rgba(46, 204, 113, 0.1); color: black'] * len(row)
+                return ['background-color: rgba(39, 174, 96, 0.2); color: black'] * len(row)
             # Dorado para el ganador
             if row.estado == 'WINNER': 
                 return ['background-color: #f1c40f; color: black; font-weight: bold'] * len(row)
