@@ -101,24 +101,24 @@ if evento:
             if row.estado == 'WINNER': return ['background-color: #f1c40f; color: black'] * len(row)
             return ['color: #95a5a6'] * len(row)
 
-    # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
-    columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "tiempo_neto", "estado"]
-
-    st.dataframe(
-        ranking[columnas_visibles].style.apply(color_filas, axis=1),
-        column_config={
-            "dorsal": "Bib",
-            "Atleta": "Atleta",
-            "Pais": "País",
-            "nro_vuelta": "Vueltas",
-            "KM": st.column_config.NumberColumn("KM", format="%.2f"),
-            # CAMBIO CLAVE AQUÍ: Usamos TextColumn porque 'tiempo_neto' es un String "MM:SS"
-            "tiempo_neto": st.column_config.TextColumn("Última Vuelta"),
-            "estado": "Estado"
-        },
-        hide_index=True, 
-        use_container_width=True
-    )
+        # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
+        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "tiempo_neto", "estado"]
+    
+        st.dataframe(
+            ranking[columnas_visibles].style.apply(color_filas, axis=1),
+            column_config={
+                "dorsal": "Bib",
+                "Atleta": "Atleta",
+                "Pais": "País",
+                "nro_vuelta": "Vueltas",
+                "KM": st.column_config.NumberColumn("KM", format="%.2f"),
+                # CAMBIO CLAVE AQUÍ: Usamos TextColumn porque 'tiempo_neto' es un String "MM:SS"
+                "tiempo_neto": st.column_config.TextColumn("Última Vuelta"),
+                "estado": "Estado"
+            },
+            hide_index=True, 
+            use_container_width=True
+        )
     else:
         st.info("Carrera iniciada. Esperando el primer paso por el patio...")
 else:
