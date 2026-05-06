@@ -5,7 +5,7 @@ from supabase import create_client
 #from st_autorefresh import st_autorefresh
 
 # 1. Configuración y Conexión
-st.set_page_config(layout="wide", page_title="Cronoer - Resultados en Vivo")
+st.set_page_config(layout="wide", page_title="BACKYARD ULTRA.ar - Resultados en Vivo")
 
 url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
@@ -99,4 +99,4 @@ else:
     st.info("Próximo evento: Yaguarundí Backyard Ultra - 12 de Septiembre")
 
 st.markdown("---")
-st.caption("Sistema de Cronometraje Cronoer - Empatía con el atleta.")
+st.caption("Sistema de Cronometraje CRONOER - Empatía con el atleta.")
