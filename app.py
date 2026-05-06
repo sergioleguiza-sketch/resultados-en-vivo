@@ -49,7 +49,7 @@ def obtener_ranking_espejo(id_evento):
     df_actual = df.sort_values('hora_llegada').groupby('dorsal').last().reset_index()
     
     # Bloque ACTIVOS: Orden por llegada (más reciente arriba)
-    activos = df_actual[df_actual['estado'] == 'ACT'].sort_values('hora_llegada', ascending=False)
+    activos = df_actual[df_actual['estado'] == 'ACT'].sort_values(['nro_vuelta', 'hora_llegada'], ascending=[False, True])
     
     # Bloque DNF/WINNER: Por vueltas (desc) y tiempo (asc)
     finalizados = df_actual[df_actual['estado'] != 'ACT'].sort_values(['nro_vuelta', 'hora_llegada'], ascending=[False, True])
@@ -93,7 +93,7 @@ if evento:
                 "Pais": "País",
                 "nro_vuelta": "Vueltas",
                 "KM": st.column_config.NumberColumn("KM", format="%.2f"), # Redondeamos los decimales
-                "hora_llegada": st.column_config.DatetimeColumn("Último Cruce", format="HH:mm:ss"),
+                "hora_llegada": st.column_config.DatetimeColumn("Última Vuelta", format="HH:mm:ss"),
                 "estado": "Estado"
             },
             hide_index=True, 
