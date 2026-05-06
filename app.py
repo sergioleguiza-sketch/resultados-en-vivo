@@ -130,9 +130,14 @@ if evento:
         
         # Aplicamos el estilo de colores
         def color_filas(row):
-            if row.estado == 'ACT': return ['background-color: rgba(46, 204, 113, 0.1)'] * len(row)
-            if row.estado == 'WINNER': return ['background-color: #f1c40f; color: black'] * len(row)
-            return ['color: #95a5a6'] * len(row)
+            # Verde esmeralda suave (Cronoer Style)
+            if row.estado == 'ACT': 
+                return ['background-color: rgba(39, 174, 96, 0.2); color: white'] * len(row)
+            # Dorado para el ganador
+            if row.estado == 'WINNER': 
+                return ['background-color: #f1c40f; color: black; font-weight: bold'] * len(row)
+            # Gris para DNF
+            return ['color: #95a5a6; font-style: italic'] * len(row)
 
         # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
         columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "tiempo_neto", "estado"]
