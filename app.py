@@ -50,8 +50,6 @@ def calcular_tiempo_neto(fila, hora_cero_evento):
     return f"{minutos:02d}:{segundos:02d}"
 
 def obtener_ranking_espejo(id_evento):
-    # 1. Definimos la consulta exacta según tu esquema de tablas
-    # Traemos datos de vueltas_vivo y anidamos inscripciones -> atletas
     query = """
         dorsal, 
         nro_vuelta, 
@@ -62,16 +60,13 @@ def obtener_ranking_espejo(id_evento):
             atletas:dni_atleta(nombre, apellido, nacionalidad)
         )
     """
-    
     res = supabase.table("vueltas_vivo").select(query).eq("id_evento", id_evento).execute()
     
     if not res.data:
         return pd.DataFrame()
 
-    # 2. Aplanamos el JSON para que Pandas lo entienda
     lista_ranking = []
     for r in res.data:
-        # Extraemos los datos anidados con seguridad
         ins = r.get('inscripciones', {})
         atl = ins.get('atletas', {})
         
@@ -85,29 +80,21 @@ def obtener_ranking_espejo(id_evento):
             "Asistente": ins.get('asistente', '-')
         }
         lista_ranking.append(fila)
-        
-    return pd.DataFrame(lista_ranking)
     
-    df = pd.DataFrame(res.data)
-    # Aplanamos el JSON de los atletas
-    df['Atleta'] = df['inscripciones'].apply(lambda x: f"{x['atletas']['nombre']} {x['atletas']['apellido']}")
-    df['Pais'] = df['inscripciones'].apply(lambda x: x['atletas']['nacionalidad'])
+    # Creamos el DF y ordenamos: 1° Vueltas desc, 2° Llegada asc
+    df = pd.DataFrame(lista_ranking)
+    # Nos quedamos con el último patio registrado de cada uno
+    df = df.sort_values('hora_llegada').groupby('dorsal').last().reset_index()
     
-    # Nos quedamos con el último estado de cada corredor
-    df_actual = df.sort_values('hora_llegada').groupby('dorsal').last().reset_index()
-    
-    # Bloque ACTIVOS: Orden por llegada (más reciente arriba)
-    activos = df_actual[df_actual['estado'] == 'ACT'].sort_values(['nro_vuelta', 'hora_llegada'], ascending=[False, True])
-    
-    # Bloque DNF/WINNER: Por vueltas (desc) y tiempo (asc)
-    finalizados = df_actual[df_actual['estado'] != 'ACT'].sort_values(['nro_vuelta', 'hora_llegada'], ascending=[False, True])
-    
-    return pd.concat([activos, finalizados])
+    return df
 
 # 3. Renderizado de la Interfaz
 #evento = obtener_evento_activo()
 
 if evento:
+    # Definimos la hora de inicio del evento (asegúrate que en la base de datos esté como timestamp)
+    # Si no existe el campo, usamos la hora actual como backup para que no rompa
+    hora_cero_local = pd.to_datetime(evento.get('fecha_inicio', datetime.now(timezone.utc)))
     # Header con Clima (Cronoer Style)
     st.title(f"🏆 {evento['nombre']}")
     st.write(f"### 📍 {evento['lugar']} | 🌡️ {evento.get('temperatura', '--')}°C | 💧 {evento.get('humedad', '--')}%")
