@@ -61,10 +61,7 @@ def calcular_tiempo_neto(fila, hora_cero_evento):
 
 def obtener_ranking_espejo(id_evento):
     query = """
-        dorsal, 
-        nro_vuelta, 
-        hora_llegada, 
-        estado,
+        dorsal, nro_vuelta, hora_llegada, estado,
         inscripciones:inscripciones!inner(
             asistente,
             atletas:dni_atleta(nombre, apellido, nacionalidad)
@@ -72,31 +69,35 @@ def obtener_ranking_espejo(id_evento):
     """
     res = supabase.table("vueltas_vivo").select(query).eq("id_evento", id_evento).execute()
     
-    if not res.data:
-        return pd.DataFrame()
+    if not res.data: return pd.DataFrame()
 
     lista_ranking = []
     for r in res.data:
         ins = r.get('inscripciones', {})
         atl = ins.get('atletas', {})
-        
         fila = {
             "dorsal": r['dorsal'],
             "nro_vuelta": r['nro_vuelta'],
             "hora_llegada": r['hora_llegada'],
             "estado": r['estado'],
             "Atleta": f"{atl.get('nombre', '')} {atl.get('apellido', '')}".strip(),
-            "Pais": atl.get('nacionalidad', 'ARG'),
-            "Asistente": ins.get('asistente', '-')
+            "Pais": atl.get('nacionalidad', 'ARG')
         }
         lista_ranking.append(fila)
     
-    # Creamos el DF y ordenamos: 1° Vueltas desc, 2° Llegada asc
     df = pd.DataFrame(lista_ranking)
-    # Nos quedamos con el último patio registrado de cada uno
-    df = df.sort_values('hora_llegada').groupby('dorsal').last().reset_index()
+    # Importante: Nos quedamos con el último registro de cada uno
+    df_actual = df.sort_values('hora_llegada').groupby('dorsal').last().reset_index()
     
-    return df
+    # --- BLOQUES DE RANKING ---
+    # 1. Los que están en carrera (ACT)
+    activos = df_actual[df_actual['estado'] == 'ACT'].sort_values(['nro_vuelta', 'hora_llegada'], ascending=[False, True])
+    
+    # 2. Los que terminaron (DNF, DQ, WINNER)
+    finalizados = df_actual[df_actual['estado'] != 'ACT'].sort_values(['nro_vuelta', 'hora_llegada'], ascending=[False, True])
+    
+    # Unimos ambos bloques: Activos siempre arriba
+    return pd.concat([activos, finalizados])
 
 # 3. Renderizado de la Interfaz
 #evento = obtener_evento_activo()
