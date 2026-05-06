@@ -50,11 +50,43 @@ def calcular_tiempo_neto(fila, hora_cero_evento):
     return f"{minutos:02d}:{segundos:02d}"
 
 def obtener_ranking_espejo(id_evento):
-    query = "dorsal, nro_, hora_llegada, estado, inscripciones(atletas(nombre, apellido, nacionalidad))"
+    # 1. Definimos la consulta exacta según tu esquema de tablas
+    # Traemos datos de vueltas_vivo y anidamos inscripciones -> atletas
+    query = """
+        dorsal, 
+        nro_vuelta, 
+        hora_llegada, 
+        estado,
+        inscripciones:inscripciones!inner(
+            asistente,
+            atletas:dni_atleta(nombre, apellido, nacionalidad)
+        )
+    """
+    
     res = supabase.table("vueltas_vivo").select(query).eq("id_evento", id_evento).execute()
     
     if not res.data:
         return pd.DataFrame()
+
+    # 2. Aplanamos el JSON para que Pandas lo entienda
+    lista_ranking = []
+    for r in res.data:
+        # Extraemos los datos anidados con seguridad
+        ins = r.get('inscripciones', {})
+        atl = ins.get('atletas', {})
+        
+        fila = {
+            "dorsal": r['dorsal'],
+            "nro_vuelta": r['nro_vuelta'],
+            "hora_llegada": r['hora_llegada'],
+            "estado": r['estado'],
+            "Atleta": f"{atl.get('nombre', '')} {atl.get('apellido', '')}".strip(),
+            "Pais": atl.get('nacionalidad', 'ARG'),
+            "Asistente": ins.get('asistente', '-')
+        }
+        lista_ranking.append(fila)
+        
+    return pd.DataFrame(lista_ranking)
     
     df = pd.DataFrame(res.data)
     # Aplanamos el JSON de los atletas
