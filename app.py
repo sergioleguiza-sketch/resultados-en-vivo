@@ -85,12 +85,15 @@ if evento:
     ranking = obtener_ranking_espejo(evento['id_evento'])
 
     if not ranking.empty:
-        # Columna de KM calculada en el momento
+        # 1. Calculamos KM
         ranking['KM'] = (ranking['nro_vuelta'] * 6.706).round(2)
-
-        # 2. AQUÍ VA EL CÓDIGO DE FORMATO DE HORA
-        # Esto transforma "2026-05-05T22:51:00Z" en "22:51:00"
-        ranking['hora_llegada'] = ranking.apply(lambda x: calcular_tiempo_neto(x, hora_cero_local), axis=1)
+    
+        # 2. CREAMOS una columna nueva para el tiempo neto (no sobreescribas la original aún)
+        # Importante: asegurate que calcular_tiempo_neto devuelva el string
+        ranking['tiempo_neto'] = ranking.apply(lambda x: calcular_tiempo_neto(x, hora_cero_local), axis=1)
+        
+        # 3. ORDENAMOS: 1° Vueltas (Desc), 2° Hora llegada real (Asc) para que el más rápido suba
+        ranking = ranking.sort_values(by=["nro_vuelta", "hora_llegada"], ascending=[False, True])
         
         # Aplicamos el estilo de colores
         def color_filas(row):
@@ -98,23 +101,24 @@ if evento:
             if row.estado == 'WINNER': return ['background-color: #f1c40f; color: black'] * len(row)
             return ['color: #95a5a6'] * len(row)
 
-        # Definimos el orden de las columnas que queremos mostrar
-        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "hora_llegada", "estado"]
+    # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
+    columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "tiempo_neto", "estado"]
 
-        st.dataframe(
-            ranking[columnas_visibles].style.apply(color_filas, axis=1), # Solo mostramos las visibles
-            column_config={
-                "dorsal": "Bib",
-                "Atleta": "Atleta",
-                "Pais": "País",
-                "nro_vuelta": "Vueltas",
-                "KM": st.column_config.NumberColumn("KM", format="%.2f"), # Redondeamos los decimales
-                "hora_llegada": st.column_config.DatetimeColumn("Última Vuelta", format="HH:mm:ss"),
-                "estado": "Estado"
-            },
-            hide_index=True, 
-            use_container_width=True
-        )
+    st.dataframe(
+        ranking[columnas_visibles].style.apply(color_filas, axis=1),
+        column_config={
+            "dorsal": "Bib",
+            "Atleta": "Atleta",
+            "Pais": "País",
+            "nro_vuelta": "Vueltas",
+            "KM": st.column_config.NumberColumn("KM", format="%.2f"),
+            # CAMBIO CLAVE AQUÍ: Usamos TextColumn porque 'tiempo_neto' es un String "MM:SS"
+            "tiempo_neto": st.column_config.TextColumn("Última Vuelta"),
+            "estado": "Estado"
+        },
+        hide_index=True, 
+        use_container_width=True
+    )
     else:
         st.info("Carrera iniciada. Esperando el primer paso por el patio...")
 else:
