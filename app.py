@@ -83,7 +83,7 @@ if evento:
             return ['color: #95a5a6'] * len(row)
 
         # Definimos el orden de las columnas que queremos mostrar
-        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "hora_llegada", "estado"][cite: 2]
+        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "hora_llegada", "estado"]
 
         st.dataframe(
             ranking[columnas_visibles].style.apply(color_filas, axis=1), # Solo mostramos las visibles
