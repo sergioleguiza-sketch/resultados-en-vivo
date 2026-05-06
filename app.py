@@ -82,15 +82,22 @@ if evento:
             if row.estado == 'WINNER': return ['background-color: #f1c40f; color: black'] * len(row)
             return ['color: #95a5a6'] * len(row)
 
+        # Definimos el orden de las columnas que queremos mostrar
+        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "hora_llegada", "estado"][cite: 2]
+
         st.dataframe(
-            ranking.style.apply(color_filas, axis=1),
+            ranking[columnas_visibles].style.apply(color_filas, axis=1), # Solo mostramos las visibles
             column_config={
                 "dorsal": "Bib",
+                "Atleta": "Atleta",
+                "Pais": "País",
                 "nro_vuelta": "Vueltas",
+                "KM": st.column_config.NumberColumn("KM", format="%.2f"), # Redondeamos los decimales
                 "hora_llegada": st.column_config.DatetimeColumn("Último Cruce", format="HH:mm:ss"),
                 "estado": "Estado"
             },
-            hide_index=True, use_container_width=True
+            hide_index=True, 
+            use_container_width=True
         )
     else:
         st.info("Carrera iniciada. Esperando el primer paso por el patio...")
