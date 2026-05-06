@@ -34,18 +34,28 @@ if eventos_lista:
         evento = eventos_lista[0]
         
 def calcular_tiempo_neto(fila, hora_cero_evento):
-    # 1. Calculamos cuándo empezó el patio que el atleta acaba de terminar
+    # 1. Aseguramos que hora_cero tenga zona horaria UTC
+    if hora_cero_evento.tzinfo is None:
+        hora_cero_evento = hora_cero_evento.replace(tzinfo=timezone.utc)
+    
+    # 2. Calculamos el inicio del patio actual
     minutos_transcurridos = (fila['nro_vuelta'] - 1) * 60
     inicio_patio = hora_cero_evento + timedelta(minutes=minutos_transcurridos)
     
-    # 2. La hora de llegada viene de Supabase (asegurarse que sea datetime)
+    # 3. Convertimos la llegada a datetime y aseguramos UTC
     llegada = pd.to_datetime(fila['hora_llegada'])
+    if llegada.tzinfo is None:
+        llegada = llegada.replace(tzinfo=timezone.utc)
+    else:
+        llegada = llegada.astimezone(timezone.utc)
     
-    # 3. Restamos para obtener la duración
+    # 4. Ahora sí restamos con seguridad
     duracion = llegada - inicio_patio
     
-    # Retornamos un string formateado MM:SS o HH:MM:SS
+    # Formateo MM:SS
     total_segundos = int(duracion.total_seconds())
+    if total_segundos < 0: return "00:00" # Por si hay algún desfase de milisegundos
+    
     minutos, segundos = divmod(total_segundos, 60)
     return f"{minutos:02d}:{segundos:02d}"
 
