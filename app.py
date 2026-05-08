@@ -146,15 +146,12 @@ if evento:
     en_pista_real = total_activos - ya_en_base
     
     # SECCIÓN A: MÉTRICAS PRINCIPALES
-    c1, c2, c3, c4 = st.columns(4) # Cambiamos a 4 columnas
+    c1, c2, c3 = st.columns(3) 
     with c1:
         st.metric("Starters", total_starters) # Mostramos el total inicial
     with c2:
         st.metric("Vuelta Actual", patio)
     with c3:
-        st_color = "inverse" if seg_restantes <= 180 else "normal"
-        st.metric("Tiempo para Campana", crono, delta_color=st_color)
-    with c4:
         # Mantenemos tu lógica de "En Pista / Activos"
         st.metric("En Circuito / Activos", f"{en_pista_count} / {total_activos}")
 
