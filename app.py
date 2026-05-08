@@ -126,11 +126,20 @@ if evento:
         # Importante: asegurate que calcular_tiempo_neto devuelva el string
         ranking['tiempo_neto'] = ranking.apply(lambda x: calcular_tiempo_neto(x, hora_cero_local), axis=1)
         ranking['es_activo'] = ranking['estado'] == 'ACT'
+        
         # 3. ORDENAMOS: 1° Vueltas (Desc), 2° Hora llegada real (Asc) para que el más rápido suba
+        # Creamos una columna auxiliar para priorizar al Ganador
+        ranking['es_ganador'] = ranking['estado'] == 'WINNER'
+        
+        # Ajustamos el orden: 
+        # 1° Ganador (True arriba)
+        # 2° Activos (True arriba)
+        # 3° Mayor número de vueltas
+        # 4° Menor tiempo de llegada (más rápido)
         ranking = ranking.sort_values(
-        by=["es_activo", "nro_vuelta", "hora_llegada"], 
-        ascending=[False, False, True]
-    )
+            by=["es_ganador", "es_activo", "nro_vuelta", "hora_llegada"], 
+            ascending=[False, False, False, True]
+        )
         
         # Aplicamos el estilo de colores
         def color_filas(row):
