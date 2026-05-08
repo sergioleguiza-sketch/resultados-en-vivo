@@ -116,6 +116,48 @@ if evento:
     st.caption(f"Clima: {evento.get('clima_desc', 'Sin datos')}")
     st.markdown("---")
 
+    # Lógica mejorada para Activos
+# En un Backyard, los Activos son: Todos los que empezaron (Starters) 
+# MENOS los que ya quedaron fuera (DNF, DQ, etc.) en cualquier momento de la carrera.
+res_eliminados = supabase.table("vueltas_vivo") \
+    .select("dorsal", count="exact") \
+    .eq("id_evento", ID_EVENTO) \
+    .neq("estado", "ACT") \
+    .execute()
+
+total_fuera = res_eliminados.count if res_eliminados.count is not None else 0
+total_activos = total_starters - total_fuera
+
+# Y para la métrica "En Circuito":
+# Son los Activos que todavía no cruzaron la meta en ESTE patio.
+llegaron_ya = supabase.table("vueltas_vivo") \
+    .select("dorsal", count="exact") \
+    .eq("id_evento", ID_EVENTO) \
+    .eq("nro_vuelta", patio) \
+    .eq("estado", "ACT") \
+    .execute()
+        
+# 1. Contar cuántos tienen el estado 'ACT'
+# Usamos el conteo exacto de la base de datos
+#total_activos = res_activos.count if res_activos.count else 0
+# Forzamos que si total_activos quedó en 0 por alguna razón, sea al menos el nro de starters
+if total_activos == 0: total_activos = total_starters
+ya_en_base = llegaron_ya.count if llegaron_ya.count is not None else 0
+en_pista_real = total_activos - ya_en_base
+
+# SECCIÓN A: MÉTRICAS PRINCIPALES
+c1, c2, c3, c4 = st.columns(4) # Cambiamos a 4 columnas
+with c1:
+    st.metric("Starters", total_starters) # Mostramos el total inicial
+with c2:
+    st.metric("Vuelta Actual", patio)
+with c3:
+    st_color = "inverse" if seg_restantes <= 180 else "normal"
+    st.metric("Tiempo para Campana", crono, delta_color=st_color)
+with c4:
+    # Mantenemos tu lógica de "En Pista / Activos"
+    st.metric("En Circuito / Activos", f"{en_pista_count} / {total_activos}")
+
     ranking = obtener_ranking_espejo(evento['id_evento'])
 
     if not ranking.empty:
