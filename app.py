@@ -34,9 +34,11 @@ if eventos_lista:
         evento = eventos_lista[0]
         
 def calcular_tiempo_neto(fila, hora_cero_evento):
-    # 1. Aseguramos que hora_cero tenga zona horaria UTC
+    # Forzamos a que ambos sean UTC para la resta
     if hora_cero_evento.tzinfo is None:
         hora_cero_evento = hora_cero_evento.replace(tzinfo=timezone.utc)
+    else:
+        hora_cero_evento = hora_cero_evento.astimezone(timezone.utc)
     
     # 2. Calculamos el inicio del patio actual
     minutos_transcurridos = (fila['nro_vuelta'] - 1) * 60
@@ -105,7 +107,9 @@ def obtener_ranking_espejo(id_evento):
 if evento:
     # Definimos la hora de inicio del evento (asegúrate que en la base de datos esté como timestamp)
     # Si no existe el campo, usamos la hora actual como backup para que no rompa
-    hora_cero_local = pd.to_datetime(evento.get('fecha_inicio', datetime.now(timezone.utc)))
+    # Usamos 'hora_cero' que es el timestamp exacto de largada, no 'fecha_inicio'
+    hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
+    
     # Header con Clima (Cronoer Style)
     st.title(f"🏆 {evento['nombre']}")
     st.write(f"### 📍 {evento['lugar']} | 🌡️ {evento.get('temperatura', '--')}°C | 💧 {evento.get('humedad', '--')}%")
