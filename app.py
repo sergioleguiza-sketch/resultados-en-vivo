@@ -165,8 +165,7 @@ if evento:
                 "estado": "Estado",
                 "KM": st.column_config.NumberColumn("KM", format="%.2f"),
                 # CAMBIO CLAVE AQUÍ: Usamos TextColumn porque 'tiempo_neto' es un String "MM:SS"
-                "tiempo_neto": st.column_config.TextColumn("Última Vuelta")
-                
+                "tiempo_neto": st.column_config.TextColumn("Última Vuelta")                
             },
             hide_index=True, 
             use_container_width=True
