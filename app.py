@@ -153,7 +153,7 @@ if evento:
             return ['color: #95a5a6; font-style: italic'] * len(row)
 
         # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
-        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "KM", "tiempo_neto", "estado"]
+        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado","KM", "tiempo_neto"]
     
         st.dataframe(
             ranking[columnas_visibles].style.apply(color_filas, axis=1),
