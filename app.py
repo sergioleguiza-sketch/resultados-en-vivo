@@ -66,7 +66,7 @@ def obtener_ranking_espejo(id_evento):
         dorsal, nro_vuelta, hora_llegada, estado,
         inscripciones:inscripciones!inner(
             asistente,
-            atletas:dni_atleta(nombre, apellido, nacionalidad)
+            atletas:dni_atleta(nombre, apellido, nacionalidad,pb)
         )
     """
     res = supabase.table("vueltas_vivo").select(query).eq("id_evento", id_evento).execute()
@@ -83,7 +83,8 @@ def obtener_ranking_espejo(id_evento):
             "hora_llegada": r['hora_llegada'],
             "estado": r['estado'],
             "Atleta": f"{atl.get('nombre', '')} {atl.get('apellido', '')}".strip(),
-            "Pais": atl.get('nacionalidad', 'ARG')
+            "Pais": atl.get('nacionalidad', 'ARG'),
+            "PB": tl.get('pb', '')
         }
         lista_ranking.append(fila)
     
@@ -153,7 +154,7 @@ if evento:
             return ['color: #95a5a6; font-style: italic'] * len(row)
 
         # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
-        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado","KM", "tiempo_neto"]
+        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado","KM", "tiempo_neto", "PB"]
     
         st.dataframe(
             ranking[columnas_visibles].style.apply(color_filas, axis=1),
@@ -165,7 +166,8 @@ if evento:
                 "estado": "Estado",
                 "KM": st.column_config.NumberColumn("KM", format="%.2f"),
                 # CAMBIO CLAVE AQUÍ: Usamos TextColumn porque 'tiempo_neto' es un String "MM:SS"
-                "tiempo_neto": st.column_config.TextColumn("Última Vuelta")                
+                "tiempo_neto": st.column_config.TextColumn("Última Vuelta"),
+                "PB": "PB"
             },
             hide_index=True, 
             use_container_width=True
