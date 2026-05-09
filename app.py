@@ -84,7 +84,7 @@ def obtener_ranking_espejo(id_evento):
             "estado": r['estado'],
             "Atleta": f"{atl.get('nombre', '')} {atl.get('apellido', '')}".strip(),
             "Pais": atl.get('nacionalidad', 'ARG'),
-            "PB": tl.get('pb', '')
+            "PB": atl.get('pb', '')
         }
         lista_ranking.append(fila)
     
