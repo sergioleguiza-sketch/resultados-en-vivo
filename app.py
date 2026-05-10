@@ -134,8 +134,8 @@ if evento:
         m1, m2 = st.columns(2)
         with m1:
             st.metric("Patio en curso", f"#{patio_actual}")
-        with m2:
-            st.metric("Atletas en carrera", total_activos)
+        #with m2:
+            #st.metric("Atletas en carrera", total_activos)
         
         st.markdown("---")
         
