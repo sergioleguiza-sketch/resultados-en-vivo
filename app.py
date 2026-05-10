@@ -199,13 +199,13 @@ if evento:
         # 3. Mostramos las métricas antes de la tabla
         # Reemplazo de st.columns para máxima compactación
         st.markdown(
-            f"**Patio:** #{patio_actual}  |  **Activos:** {total_activos}  |  **KM:** {round(patio_actual * 6.706, 2)}", 
+            f"**Vuelta:** #{patio_actual}  |  **Activos:** {total_activos}  |  **KM:** {round(patio_actual * 6.706, 2)}", 
             unsafe_allow_html=True
         )
             # Calculamos el patio basándonos en la última vuelta registrada si ya terminó
             #max_vuelta = ranking['nro_vuelta'].max()
             #st.metric("Vuelta", f"#{max_vuelta}" if tiene_ganador else f"#{patio_actual}")
-        st.markdown("---")
+        #st.markdown("---")
         
         # 1. Calculamos KM
         ranking['KM'] = (ranking['nro_vuelta'] * 6.706).round(2)
