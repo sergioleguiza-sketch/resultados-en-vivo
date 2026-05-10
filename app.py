@@ -197,14 +197,14 @@ if evento:
         patio_actual = int(segundos_totales // 3600) + 1 if segundos_totales > 0 else 1
         
         # 3. Mostramos las métricas antes de la tabla
-        col1, col2 = st.columns(2)
-        with col1:
+        # Reemplazo de st.columns para máxima compactación
+        st.markdown(
+            f"**Patio:** #{patio_actual}  |  **Activos:** {total_activos}  |  **KM:** {round(patio_actual * 6.706, 2)}", 
+            unsafe_allow_html=True
+        )
             # Calculamos el patio basándonos en la última vuelta registrada si ya terminó
-            max_vuelta = ranking['nro_vuelta'].max()
-            st.metric("Vuelta", f"#{max_vuelta}" if tiene_ganador else f"#{patio_actual}")
-        with col2:
-            st.metric("Atletas en carrera", total_activos)
-        
+            #max_vuelta = ranking['nro_vuelta'].max()
+            #st.metric("Vuelta", f"#{max_vuelta}" if tiene_ganador else f"#{patio_actual}")
         st.markdown("---")
         
         # 1. Calculamos KM
