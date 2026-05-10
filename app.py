@@ -4,6 +4,48 @@ from datetime import datetime, timezone, timedelta
 from supabase import create_client
 #from st_autorefresh import st_autorefresh
 
+# Inyección de CSS para compactar la interfaz en móviles
+st.markdown(
+    """
+    <style>
+    /* 1. Reducir el espacio superior (Padding del contenedor principal) */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 0rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    /* 2. Compactar el espacio entre elementos (títulos, métricas, markdown) */
+    div[data-testid="stVerticalBlock"] > div {
+        gap: 0.5rem !important;
+    }
+
+    /* 3. Ajustar el tamaño del título para que no ocupe media pantalla en celu */
+    h1 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0px !important;
+    }
+    
+    h3 {
+        font-size: 1.1rem !important;
+        margin-top: 0px !important;
+    }
+
+    /* 4. Reducir el espacio de las métricas */
+    [data-testid="stMetric"] {
+        padding: 5px !important;
+    }
+    
+    /* 5. Forzar a que la tabla ocupe más espacio visual */
+    .stDataFrame {
+        margin-top: -10px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # 1. Configuración y Conexión
 st.set_page_config(layout="wide", page_title="BACKYARD ULTRA.ar - Resultados en Vivo")
 
