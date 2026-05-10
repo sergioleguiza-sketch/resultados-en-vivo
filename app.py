@@ -123,8 +123,17 @@ if evento:
         # 1. Calculamos KM
         ranking['KM'] = (ranking['nro_vuelta'] * 6.706).round(2)
 
+        # 1. Mapeo de Banderas para Nacionalidad
+        banderas = {
+            "ARG": "🇦🇷 ARG",
+            "URY": "🇺🇾 URY",
+            "BRA": "🇧🇷 BRA",
+            "CHL": "🇨🇱 CHL"
+        }
+        ranking['Pais'] = ranking['Pais'].map(lambda x: banderas.get(x, x))
+
         # Para mostrar un guion en lugar de 0
-        ranking['PB'] = ranking['PB'].apply(lambda x: int(x) if x > 0 else "—")
+        ranking['PB'] = ranking['PB'].apply(lambda x: int(x) if x > 0 else None)
     
         # 2. CREAMOS una columna nueva para el tiempo neto (no sobreescribas la original aún)
         # Importante: asegurate que calcular_tiempo_neto devuelva el string
@@ -173,7 +182,7 @@ if evento:
                 "PB": st.column_config.NumberColumn(
                     "PB",
                     help="Personal Best (Patios)",
-                    format="%d"  # El %d fuerza a mostrarlo como entero
+                    #format="%d"  # El %d fuerza a mostrarlo como entero
                 )
             },
             hide_index=True, 
