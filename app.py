@@ -106,6 +106,18 @@ def obtener_ranking_espejo(id_evento):
 #evento = obtener_evento_activo()
 
 if evento:
+    # 1. Determinamos si hay un ganador para cambiar la etiqueta
+    # Buscamos si algún registro en el ranking tiene el estado 'WINNER'
+    tiene_ganador = (ranking['estado'] == 'WINNER').any() if not ranking.empty else False
+    
+    # 2. Definimos el texto y el color del badge
+    if tiene_ganador:
+        etiqueta = "🔴 FINALIZADO"
+        color_header = "gray"
+    else:
+        etiqueta = "🟢 EN CURSO"
+        color_header = "green"
+    
     # Definimos la hora de inicio del evento (asegúrate que en la base de datos esté como timestamp)
     # Si no existe el campo, usamos la hora actual como backup para que no rompa
     # Usamos 'hora_cero' que es el timestamp exacto de largada, no 'fecha_inicio'
@@ -123,6 +135,7 @@ if evento:
     
     # Header con Clima (Cronoer Style)
     st.title(f"🏆 {evento['nombre']}")
+    st.subheader(f":{color_header}[{etiqueta}]") # Esto pone el texto en color
     st.write(f"### 📍 {evento['lugar']} | 🌡️ {evento.get('temperatura', '--')}°C | 💧 {evento.get('humedad', '--')}%")
     st.caption(f"Clima: {evento.get('clima_desc', 'Sin datos')}")
     st.markdown("---")
@@ -143,7 +156,9 @@ if evento:
         # 3. Mostramos las métricas antes de la tabla
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Patio en curso", f"#{patio_actual}")
+            # Calculamos el patio basándonos en la última vuelta registrada si ya terminó
+            max_vuelta = ranking['nro_vuelta'].max()
+            st.metric("Patios Totales", f"#{max_vuelta}" if es_finalizado else f"#{patio_actual}")
         with col2:
             st.metric("Atletas en carrera", total_activos)
         
