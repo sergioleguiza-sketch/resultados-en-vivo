@@ -130,12 +130,22 @@ if evento:
     ranking = obtener_ranking_espejo(evento['id_evento'])
 
     if not ranking.empty:
-        # Mostramos métricas visuales
-        m1, m2 = st.columns(2)
-        with m1:
+        # 1. Calculamos la métrica de activos de forma segura
+        # Contamos las filas donde el estado es exactamente 'ACT'
+        total_activos = int((ranking['estado'] == 'ACT').sum())
+
+        # 2. Calculamos el patio actual (lógica de tiempo)
+        hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
+        ahora = datetime.now(timezone.utc)
+        segundos_totales = (ahora - hora_cero_local).total_seconds()
+        patio_actual = int(segundos_totales // 3600) + 1 if segundos_totales > 0 else 1
+        
+        # 3. Mostramos las métricas antes de la tabla
+        col1, col2 = st.columns(2)
+        with col1:
             st.metric("Patio en curso", f"#{patio_actual}")
-        #with m2:
-            #st.metric("Atletas en carrera", total_activos)
+        with col2:
+            st.metric("Atletas en carrera", total_activos)
         
         st.markdown("---")
         
