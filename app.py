@@ -158,7 +158,7 @@ if evento:
         with col1:
             # Calculamos el patio basándonos en la última vuelta registrada si ya terminó
             max_vuelta = ranking['nro_vuelta'].max()
-            st.metric("Vuelta", f"#{max_vuelta}" if es_finalizado else f"#{patio_actual}")
+            st.metric("Vuelta", f"#{max_vuelta}" if tiene_ganador else f"#{patio_actual}")
         with col2:
             st.metric("Atletas en carrera", total_activos)
         
