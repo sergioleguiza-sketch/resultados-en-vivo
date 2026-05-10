@@ -122,6 +122,9 @@ if evento:
     if not ranking.empty:
         # 1. Calculamos KM
         ranking['KM'] = (ranking['nro_vuelta'] * 6.706).round(2)
+
+        # Para mostrar un guion en lugar de 0
+        ranking['PB'] = ranking['PB'].apply(lambda x: int(x) if x > 0 else "—")
     
         # 2. CREAMOS una columna nueva para el tiempo neto (no sobreescribas la original aún)
         # Importante: asegurate que calcular_tiempo_neto devuelva el string
