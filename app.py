@@ -128,12 +128,16 @@ if evento:
             "ARG": "🇦🇷 ARG",
             "URY": "🇺🇾 URY",
             "BRA": "🇧🇷 BRA",
-            "CHL": "🇨🇱 CHL"
+            "CHL": "🇨🇱 CHL",
+            "GER": "🇩🇪 GER",
+            "ISR": "🇮🇱 ISR",
+            "ESP": "🇪🇸 ESP",
+            "USA": "🇺🇸 USA"
         }
         ranking['Pais'] = ranking['Pais'].map(lambda x: banderas.get(x, x))
 
         # Para mostrar un guion en lugar de 0
-        ranking['PB'] = ranking['PB'].apply(lambda x: int(x) if x > 0 else None)
+        ranking['PB'] = pd.to_numeric(ranking['PB'], errors='coerce').astype('Int64')
     
         # 2. CREAMOS una columna nueva para el tiempo neto (no sobreescribas la original aún)
         # Importante: asegurate que calcular_tiempo_neto devuelva el string
@@ -182,6 +186,7 @@ if evento:
                 "PB": st.column_config.NumberColumn(
                     "PB",
                     help="Personal Best (Patios)",
+                    format="%i" # Usamos %i (integer) en lugar de %d para evitar el conflicto visual
                     #format="%d"  # El %d fuerza a mostrarlo como entero
                 )
             },
