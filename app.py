@@ -110,6 +110,16 @@ if evento:
     # Si no existe el campo, usamos la hora actual como backup para que no rompa
     # Usamos 'hora_cero' que es el timestamp exacto de largada, no 'fecha_inicio'
     hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
+    ahora = datetime.now(timezone.utc)
+    tiempo_transcurrido = ahora - hora_cero_local
+    segundos_totales = tiempo_transcurrido.total_seconds()
+    
+    # Calculamos el patio actual basado en el tiempo
+    if segundos_totales < 0:
+        patio_actual = 0
+    else:
+        patio_actual = int(segundos_totales // 3600) + 1
+
     
     # Header con Clima (Cronoer Style)
     st.title(f"🏆 {evento['nombre']}")
@@ -120,6 +130,15 @@ if evento:
     ranking = obtener_ranking_espejo(evento['id_evento'])
 
     if not ranking.empty:
+        # Mostramos métricas visuales
+        m1, m2 = st.columns(2)
+        with m1:
+            st.metric("Patio en curso", f"#{patio_actual}")
+        with m2:
+            st.metric("Atletas en carrera", total_activos)
+        
+        st.markdown("---")
+        
         # 1. Calculamos KM
         ranking['KM'] = (ranking['nro_vuelta'] * 6.706).round(2)
 
