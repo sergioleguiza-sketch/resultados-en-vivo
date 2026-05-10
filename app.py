@@ -180,7 +180,7 @@ if evento:
     # Header con Clima (Cronoer Style)
     st.title(f"🏆 {evento['nombre']}")
     st.subheader(f":{color_header}[{etiqueta}]") # Esto pone el texto en color
-    st.write(f"### 📍 {evento['lugar']} | 🌡️ {evento.get('temperatura', '--')}°C | 💧 {evento.get('humedad', '--')}%")
+    st.write(f"### 📍 {evento['lugar']}")
     st.write(f"### 🌡️ {evento.get('temperatura', '--')}°C | 💧 {evento.get('humedad', '--')}%")
 
     st.caption(f"Clima: {evento.get('clima_desc', 'Sin datos')}")
