@@ -106,9 +106,11 @@ def obtener_ranking_espejo(id_evento):
 #evento = obtener_evento_activo()
 
 if evento:
+    ranking = obtener_ranking_espejo(evento['id_evento'])
+    
     # 1. Determinamos si hay un ganador para cambiar la etiqueta
     # Buscamos si algún registro en el ranking tiene el estado 'WINNER'
-    #tiene_ganador = (ranking['estado'] == 'WINNER').any() if not ranking.empty else False
+    tiene_ganador = (ranking['estado'] == 'WINNER').any() if not ranking.empty else False
     
     # 2. Definimos el texto y el color del badge
     if tiene_ganador:
@@ -139,8 +141,6 @@ if evento:
     st.write(f"### 📍 {evento['lugar']} | 🌡️ {evento.get('temperatura', '--')}°C | 💧 {evento.get('humedad', '--')}%")
     st.caption(f"Clima: {evento.get('clima_desc', 'Sin datos')}")
     st.markdown("---")
-
-    ranking = obtener_ranking_espejo(evento['id_evento'])
 
     if not ranking.empty:
         # 1. Calculamos la métrica de activos de forma segura
