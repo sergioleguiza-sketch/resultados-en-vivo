@@ -8,38 +8,37 @@ from supabase import create_client
 st.markdown(
     """
     <style>
-    /* 1. Reducir el espacio superior (Padding del contenedor principal) */
-    .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 0rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-    }
-    
-    /* 2. Compactar el espacio entre elementos (títulos, métricas, markdown) */
-    div[data-testid="stVerticalBlock"] > div {
-        gap: 0.5rem !important;
+    /* 1. Reducir el contenedor de la métrica */
+    [data-testid="stMetric"] {
+        padding: 0px !important;
+        text-align: center;
     }
 
-    /* 3. Ajustar el tamaño del título para que no ocupe media pantalla en celu */
-    h1 {
-        font-size: 1.5rem !important;
+    /* 2. Achicar el título de la métrica (la etiqueta arriba del número) */
+    [data-testid="stMetricLabel"] {
+        font-size: 0.8rem !important;
+        margin-bottom: -10px !important;
+    }
+
+    /* 3. Achicar el número de la métrica */
+    [data-testid="stMetricValue"] {
+        font-size: 1.4rem !important;
+    }
+
+    /* 4. Eliminar el espacio sobrante entre bloques de métricas */
+    div[data-testid="stMetric"] > div {
         margin-bottom: 0px !important;
     }
-    
-    h3 {
-        font-size: 1.1rem !important;
-        margin-top: 0px !important;
-    }
 
-    /* 4. Reducir el espacio de las métricas */
-    [data-testid="stMetric"] {
-        padding: 5px !important;
+    /* 5. Acercar las columnas de métricas entre sí */
+    [data-testid="column"] {
+        width: fit-content !important;
+        flex: 1 1 auto !important;
     }
     
-    /* 5. Forzar a que la tabla ocupe más espacio visual */
-    .stDataFrame {
-        margin-top: -10px !important;
+    /* 6. Reducir el espacio general del bloque vertical */
+    .stVerticalBlock {
+        gap: 0.2rem !important;
     }
     </style>
     """,
