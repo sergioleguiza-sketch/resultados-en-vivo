@@ -257,7 +257,16 @@ if evento:
             return ['color: #95a5a6; font-style: italic'] * len(row)
 
         # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
-        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado","KM", "tiempo_neto", "PB"]
+        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado","KM", "segundos_netos", "PB"]
+
+        def formatear_segundos(s):
+            if pd.isna(s) or s <= 0:
+                return "00:00"
+            m, s = divmod(int(s), 60)
+            return f"{m:02d}:{s:02d}"
+        
+        # Aplicamos el formato a la columna del ranking
+        ranking["Tiempo Vuelta"] = ranking["segundos_netos"].apply(formatear_segundos)
     
         st.dataframe(
             ranking[columnas_visibles].style.apply(color_filas, axis=1),
@@ -269,7 +278,7 @@ if evento:
                 "estado": "Estado",
                 "KM": st.column_config.NumberColumn("KM", format="%.2f"),
                 # CAMBIO CLAVE AQUÍ: Usamos TextColumn porque 'tiempo_neto' es un String "MM:SS"
-                "tiempo_neto": st.column_config.TextColumn("Última Vuelta"),
+                "Tiempo Vuelta": st.column_config.TextColumn("Última Vuelta"),
                 "PB": st.column_config.NumberColumn(
                     "PB",
                     help="Personal Best (Patios)",
