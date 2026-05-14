@@ -104,7 +104,7 @@ def calcular_tiempo_neto(fila, hora_cero_evento):
 
 def obtener_ranking_espejo(id_evento):
     query = """
-        dorsal, nro_vuelta, hora_llegada, estado,
+        dorsal, nro_vuelta, hora_llegada, estado, segundos_netos,
         inscripciones:inscripciones!inner(
             asistente,
             atletas:dni_atleta(nombre, apellido, nacionalidad,pb)
@@ -123,6 +123,7 @@ def obtener_ranking_espejo(id_evento):
             "nro_vuelta": r['nro_vuelta'],
             "hora_llegada": r['hora_llegada'],
             "estado": r['estado'],
+            "segundos_netos": r.get('segundos_netos', 0), # Agrega esta línea
             "Atleta": f"{atl.get('nombre', '')} {atl.get('apellido', '')}".strip(),
             "Pais": atl.get('nacionalidad', 'ARG'),
             "PB": atl.get('pb', '')
@@ -257,7 +258,7 @@ if evento:
             return ['color: #95a5a6; font-style: italic'] * len(row)
 
         # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
-        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado","KM", "segundos_netos", "PB"]
+        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado","KM", "Tiempo Vuelta", "PB"]
 
         def formatear_segundos(s):
             if pd.isna(s) or s <= 0:
