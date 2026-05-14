@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timezone, timedelta
 from supabase import create_client
-from st_autorefresh import st_autorefresh
+#from st_autorefresh import st_autorefresh
 
 # Inyección de CSS para compactar la interfaz en móviles
 st.markdown(
