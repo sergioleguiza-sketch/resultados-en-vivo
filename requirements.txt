@@ -1,4 +1,4 @@
 streamlit
 supabase
 pandas
-st-autorefresh
+streamlit-autorefresh
