@@ -147,9 +147,12 @@ def obtener_ranking_espejo(id_evento):
 # 3. Renderizado de la Interfaz
 #evento = obtener_evento_activo()
 
-if evento:
-    ranking = obtener_ranking_espejo(evento['id_evento'])
-    
+# --- COLOCAR ESTO ANTES DEL "if evento:" ---
+
+@st.fragment(run_every="30s")
+def mostrar_ranking_actualizado(evento_id, hora_cero_local):
+    # Traemos los datos frescos de Supabase
+    ranking = obtener_ranking_espejo(evento_id)
     # 1. Determinamos si hay un ganador para cambiar la etiqueta
     # Buscamos si algún registro en el ranking tiene el estado 'WINNER'
     tiene_ganador = (ranking['estado'] == 'WINNER').any() if not ranking.empty else False
@@ -165,6 +168,7 @@ if evento:
     # Definimos la hora de inicio del evento (asegúrate que en la base de datos esté como timestamp)
     # Si no existe el campo, usamos la hora actual como backup para que no rompa
     # Usamos 'hora_cero' que es el timestamp exacto de largada, no 'fecha_inicio'
+    
     hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
     ahora = datetime.now(timezone.utc)
     tiempo_transcurrido = ahora - hora_cero_local
@@ -175,77 +179,39 @@ if evento:
         patio_actual = 0
     else:
         patio_actual = int(segundos_totales // 3600) + 1
-
     
-    # Header con Clima (Cronoer Style)
-    st.title(f"🏆 {evento['nombre']}")
-    st.subheader(f":{color_header}[{etiqueta}]") # Esto pone el texto en color
-    st.write(f"### 📍 {evento['lugar']}")
-    st.write(f"### 🌡️ {evento.get('temperatura', '--')}°C | 💧 {evento.get('humedad', '--')}%")
-
-    st.caption(f"Clima: {evento.get('clima_desc', 'Sin datos')}")
-    st.markdown("---")
-
     if not ranking.empty:
-        # 1. Calculamos la métrica de activos de forma segura
-        # Contamos las filas donde el estado es exactamente 'ACT'
+        # 1. Cálculos de métricas rápidas (Activos y Patio)
         total_activos = int((ranking['estado'] == 'ACT').sum())
-
-        # 2. Calculamos el patio actual (lógica de tiempo)
         hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
         ahora = datetime.now(timezone.utc)
         segundos_totales = (ahora - hora_cero_local).total_seconds()
         patio_actual = int(segundos_totales // 3600) + 1 if segundos_totales > 0 else 1
-        
-        # 3. Mostramos las métricas antes de la tabla
-        # Reemplazo de st.columns para máxima compactación
+
+        # 2. Render de métricas compactas
         st.markdown(
             f"**Vuelta:** #{patio_actual}  |  **Activos:** {total_activos}  |  **KM:** {round(patio_actual * 6.706, 2)}", 
             unsafe_allow_html=True
         )
-            # Calculamos el patio basándonos en la última vuelta registrada si ya terminó
-            #max_vuelta = ranking['nro_vuelta'].max()
-            #st.metric("Vuelta", f"#{max_vuelta}" if tiene_ganador else f"#{patio_actual}")
-        #st.markdown("---")
-        
-        # 1. Calculamos KM
+
+        # 3. Procesamiento de la tabla (Banderas, KM, Tiempos)
         ranking['KM'] = (ranking['nro_vuelta'] * 6.706).round(2)
-
-        # 1. Mapeo de Banderas para Nacionalidad
-        banderas = {
-            "ARG": "🇦🇷 ARG",
-            "URY": "🇺🇾 URY",
-            "BRA": "🇧🇷 BRA",
-            "CHL": "🇨🇱 CHL",
-            "GER": "🇩🇪 GER",
-            "ISR": "🇮🇱 ISR",
-            "ESP": "🇪🇸 ESP",
-            "USA": "🇺🇸 USA"
-        }
+        banderas = {"ARG": "🇦🇷 ARG", "URY": "🇺🇾 URY", "BRA": "🇧🇷 BRA", "CHL": "🇨🇱 CHL", "GER": "🇩🇪 GER", "ISR": "🇮🇱 ISR", "ESP": "🇪🇸 ESP", "USA": "🇺🇸 USA"}
         ranking['Pais'] = ranking['Pais'].map(lambda x: banderas.get(x, x))
-
-        # Para mostrar un guion en lugar de 0
         ranking['PB'] = pd.to_numeric(ranking['PB'], errors='coerce').astype('Int64')
-    
-        # 2. CREAMOS una columna nueva para el tiempo neto (no sobreescribas la original aún)
-        # Importante: asegurate que calcular_tiempo_neto devuelva el string
-        ranking['tiempo_neto'] = ranking.apply(lambda x: calcular_tiempo_neto(x, hora_cero_local), axis=1)
-        ranking['es_activo'] = ranking['estado'] == 'ACT'
+        ranking["Tiempo Vuelta"] = ranking["segundos_netos"].apply(formatear_segundos)
         
-        # 3. ORDENAMOS: 1° Vueltas (Desc), 2° Hora llegada real (Asc) para que el más rápido suba
+        # 4. Orden lógico (Ganador > Activos > Vueltas > Tiempo)
+        ranking['es_activo'] = ranking['estado'] == 'ACT'
         # Creamos una columna auxiliar para priorizar al Ganador
         ranking['es_ganador'] = ranking['estado'] == 'WINNER'
-        
         # Ajustamos el orden: 
         # 1° Ganador (True arriba)
         # 2° Activos (True arriba)
         # 3° Mayor número de vueltas
         # 4° Menor tiempo de llegada (más rápido)
-        ranking = ranking.sort_values(
-            by=["es_ganador", "es_activo", "nro_vuelta", "hora_llegada"], 
-            ascending=[False, False, False, True]
-        )
-        
+        ranking = ranking.sort_values(by=["es_ganador", "es_activo", "nro_vuelta", "hora_llegada"], ascending=[False, False, False, True])
+
         # Aplicamos el estilo de colores
         def color_filas(row):
             # Verde esmeralda suave (Cronoer Style)
@@ -256,9 +222,8 @@ if evento:
                 return ['background-color: #f1c40f; color: black; font-weight: bold'] * len(row)
             # Gris para DNF
             return ['color: #95a5a6; font-style: italic'] * len(row)
-
-        # 4. Definimos columnas (Cambiamos hora_llegada por tiempo_neto)
-        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado","KM", "Tiempo Vuelta", "PB"]
+        # 5. Mostrar la grilla
+        columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado", "KM", "Tiempo Vuelta", "PB"]
 
         def formatear_segundos(s):
             if pd.isna(s) or s <= 0:
@@ -268,30 +233,37 @@ if evento:
         
         # Aplicamos el formato a la columna del ranking
         ranking["Tiempo Vuelta"] = ranking["segundos_netos"].apply(formatear_segundos)
-    
         st.dataframe(
             ranking[columnas_visibles].style.apply(color_filas, axis=1),
             column_config={
                 "dorsal": "Bib",
-                "Atleta": "Atleta",
-                "Pais": "País",
-                "nro_vuelta": "Vuelta",
-                "estado": "Estado",
                 "KM": st.column_config.NumberColumn("KM", format="%.2f"),
-                # CAMBIO CLAVE AQUÍ: Usamos TextColumn porque 'tiempo_neto' es un String "MM:SS"
                 "Tiempo Vuelta": st.column_config.TextColumn("Última Vuelta"),
-                "PB": st.column_config.NumberColumn(
-                    "PB",
-                    help="Personal Best (Patios)",
-                    format="%i" # Usamos %i (integer) en lugar de %d para evitar el conflicto visual
-                    #format="%d"  # El %d fuerza a mostrarlo como entero
-                )
+                "PB": st.column_config.NumberColumn("PB", format="%i")
             },
             hide_index=True, 
             use_container_width=True
         )
     else:
-        st.info("Carrera iniciada. Esperando el primer paso por el patio...")
+        st.info("Esperando el primer paso por el patio...")
+
+if evento:
+    ranking = obtener_ranking_espejo(evento['id_evento'])
+    
+    # Header con Clima (Cronoer Style)
+    st.title(f"🏆 {evento['nombre']}")
+    st.subheader(f":{color_header}[{etiqueta}]") # Esto pone el texto en color
+    st.write(f"### 📍 {evento['lugar']}")
+    st.write(f"### 🌡️ {evento.get('temperatura', '--')}°C | 💧 {evento.get('humedad', '--')}%")
+
+    st.caption(f"Clima: {evento.get('clima_desc', 'Sin datos')}")
+    st.markdown("---")
+    
+    hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
+    
+    # LLAMADA AL FRAGMENTO: Esto es lo que se refresca cada 30s
+    mostrar_ranking_actualizado(evento['id_evento'], hora_cero_local)
+
 else:
     st.warning("No hay eventos en vivo en este momento.")
     st.info("Próximo evento: Yaguarundí Backyard Ultra - 12 de Septiembre")
