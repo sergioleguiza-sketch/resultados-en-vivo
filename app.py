@@ -184,7 +184,7 @@ def mostrar_ranking_actualizado(evento_id, hora_cero_local):
         banderas = {"ARG": "🇦🇷 ARG", "URY": "🇺🇾 URY", "BRA": "🇧🇷 BRA", "CHL": "🇨🇱 CHL", "GER": "🇩🇪 GER", "ISR": "🇮🇱 ISR", "ESP": "🇪🇸 ESP", "USA": "🇺🇸 USA"}
         ranking['Pais'] = ranking['Pais'].map(lambda x: banderas.get(x, x))
         ranking['PB'] = pd.to_numeric(ranking['PB'], errors='coerce').astype('Int64')
-        ranking["Tiempo Vuelta"] = ranking["segundos_netos"].apply(formatear_segundos)
+        #ranking["Tiempo Vuelta"] = ranking["segundos_netos"].apply(formatear_segundos)
         
         # 4. Orden lógico (Ganador > Activos > Vueltas > Tiempo)
         ranking['es_activo'] = ranking['estado'] == 'ACT'
