@@ -149,6 +149,16 @@ def obtener_ranking_espejo(id_evento):
 
 # --- COLOCAR ESTO ANTES DEL "if evento:" ---
 
+# 1. DEFINIR PRIMERO (Fuera del fragmento para que sea global)
+def formatear_segundos(s):
+    if pd.isna(s) or s <= 0:
+        return "00:00"
+    try:
+        m, s = divmod(int(s), 60)
+        return f"{m:02d}:{s:02d}"
+    except:
+        return "00:00"
+        
 @st.fragment(run_every="30s")
 def mostrar_ranking_actualizado(evento_id, hora_cero_local):
     # Traemos los datos frescos de Supabase
@@ -209,12 +219,6 @@ def mostrar_ranking_actualizado(evento_id, hora_cero_local):
             return ['color: #95a5a6; font-style: italic'] * len(row)
         # 5. Mostrar la grilla
         columnas_visibles = ["dorsal", "Atleta", "Pais", "nro_vuelta", "estado", "KM", "Tiempo Vuelta", "PB"]
-
-        def formatear_segundos(s):
-            if pd.isna(s) or s <= 0:
-                return "00:00"
-            m, s = divmod(int(s), 60)
-            return f"{m:02d}:{s:02d}"
         
         # Aplicamos el formato a la columna del ranking
         ranking["Tiempo Vuelta"] = ranking["segundos_netos"].apply(formatear_segundos)
