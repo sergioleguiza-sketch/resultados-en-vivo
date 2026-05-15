@@ -55,24 +55,29 @@ supabase = create_client(url, key)
 # Autorefresh cada 30 segundos
 #st_autorefresh(interval=30 * 1000, key="datarefresh")
 
-# 2. Funciones Lógicas
-# --- REEMPLAZO EN EL RENDERIZADO ---
 
-# 1. Traemos TODOS los eventos que estén "en_vivo" (pueden ser varios)
+# 1. Inicializamos la variable evento en None para evitar errores de "variable no definida"
+evento = None
+
+# 2. Traemos TODOS los eventos que estén "en_vivo"
 res_eventos = supabase.table("eventos").select("*").eq("estado", "en_vivo").execute()
 eventos_lista = res_eventos.data
 
 if eventos_lista:
-    # 2. Si hay más de uno, mostramos el selector
+    # Si hay más de uno, mostramos el selector
     if len(eventos_lista) > 1:
         nombres_eventos = [e['nombre'] for e in eventos_lista]
         seleccion = st.selectbox("📍 Seleccioná la carrera en curso:", nombres_eventos)
         
-        # Filtramos para quedarnos con los datos del evento elegido
-        evento = next(e for e in eventos_lista if e['nombre'] == seleccion)
+        # Buscamos el evento seleccionado
+        evento = next((e for e in eventos_lista if e['nombre'] == seleccion), None)
     else:
         # Si hay uno solo, lo asignamos directo
         evento = eventos_lista[0]
+else:
+    # OPCIONAL: Aquí podrías poner un mensaje si querés que aparezca arriba de todo
+    st.info("No hay competencias activas en este momento.")
+    pass
         
 def calcular_tiempo_neto(fila, hora_cero_evento):
     # Forzamos a que ambos sean UTC para la resta
