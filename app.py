@@ -153,21 +153,6 @@ def obtener_ranking_espejo(id_evento):
 def mostrar_ranking_actualizado(evento_id, hora_cero_local):
     # Traemos los datos frescos de Supabase
     ranking = obtener_ranking_espejo(evento_id)
-    # 1. Determinamos si hay un ganador para cambiar la etiqueta
-    # Buscamos si algún registro en el ranking tiene el estado 'WINNER'
-    tiene_ganador = (ranking['estado'] == 'WINNER').any() if not ranking.empty else False
-    
-    # 2. Definimos el texto y el color del badge
-    if tiene_ganador:
-        etiqueta = "🔴 FINALIZADO"
-        color_header = "gray"
-    else:
-        etiqueta = "🟢 EN CURSO"
-        color_header = "green"
-    
-    # Definimos la hora de inicio del evento (asegúrate que en la base de datos esté como timestamp)
-    # Si no existe el campo, usamos la hora actual como backup para que no rompa
-    # Usamos 'hora_cero' que es el timestamp exacto de largada, no 'fecha_inicio'
     
     hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
     ahora = datetime.now(timezone.utc)
@@ -249,7 +234,18 @@ def mostrar_ranking_actualizado(evento_id, hora_cero_local):
 
 if evento:
     ranking = obtener_ranking_espejo(evento['id_evento'])
+
+    # 1. Determinamos si hay un ganador para cambiar la etiqueta
+    # Buscamos si algún registro en el ranking tiene el estado 'WINNER'
+    tiene_ganador = (ranking['estado'] == 'WINNER').any() if not ranking.empty else False
     
+    # 2. Definimos el texto y el color del badge
+    if tiene_ganador:
+        etiqueta = "🔴 FINALIZADO"
+        color_header = "gray"
+    else:
+        etiqueta = "🟢 EN CURSO"
+        color_header = "green"
     # Header con Clima (Cronoer Style)
     st.title(f"🏆 {evento['nombre']}")
     st.subheader(f":{color_header}[{etiqueta}]") # Esto pone el texto en color
