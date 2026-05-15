@@ -178,7 +178,7 @@ def mostrar_ranking_actualizado(evento_id, hora_cero_local):
     if not ranking.empty:
         # 1. Cálculos de métricas rápidas (Activos y Patio)
         total_activos = int((ranking['estado'] == 'ACT').sum())
-        hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
+        #hora_cero_local = pd.to_datetime(evento.get('hora_cero', datetime.now(timezone.utc)))
         ahora = datetime.now(timezone.utc)
         segundos_totales = (ahora - hora_cero_local).total_seconds()
         patio_actual = int(segundos_totales // 3600) + 1 if segundos_totales > 0 else 1
