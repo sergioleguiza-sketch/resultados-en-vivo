@@ -76,7 +76,7 @@ if eventos_lista:
         evento = eventos_lista[0]
 else:
     # OPCIONAL: Aquí podrías poner un mensaje si querés que aparezca arriba de todo
-    st.info("No hay eventos en vivo en este momento. Próximo evento: Yaguarundí Backyard Ultra.")
+    #st.info("No hay eventos en vivo en este momento. Próximo evento: Yaguarundí Backyard Ultra.")
     pass
         
 def calcular_tiempo_neto(fila, hora_cero_evento):
